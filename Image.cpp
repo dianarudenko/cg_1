@@ -36,7 +36,7 @@ Image::Image(int a_width, int a_height, int a_channels)
 void Image::Clean() {
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
-      data[width * y + x] = backgroundColor;
+      data[width * y + x] = {0, 0, 0, 0};
     }
   }
 }
@@ -81,21 +81,40 @@ void Image::PutTile(int x, int y, Image & img, tileType type) {
         continue;
       }
       PutPixel(j + x, i + y, img.GetPixel(j, tileSize - i - 1));
-  //std::cout << "1\n";
       tileMap[(i + y) * width + j + x] = type;
-  //std::cout << j << " ";
     }
-    //std::cout << i << "\n";
   }
 }
 
 
-  void Image::MixPixels (int x, int y, const Pixel &pix) {
-    data[width * y + x].r = pix.a / 255.0 * (pix.r - data[width * y + x].r) + data[width * y + x].r;
-    data[width * y + x].g = pix.a / 255.0 * (pix.g - data[width * y + x].g) + data[width * y + x].g;
-    data[width * y + x].b = pix.a / 255.0 * (pix.b - data[width * y + x].b) + data[width * y + x].b;
-    data[width * y + x].a = pix.a * (1 - data[width * y + x].a / 255.0) + data[width * y + x].a;
+void Image::MixPixels (int x, int y, const Pixel &pix) {
+  data[width * y + x].r = pix.a / 255.0 * (pix.r - data[width * y + x].r) + data[width * y + x].r;
+  data[width * y + x].g = pix.a / 255.0 * (pix.g - data[width * y + x].g) + data[width * y + x].g;
+  data[width * y + x].b = pix.a / 255.0 * (pix.b - data[width * y + x].b) + data[width * y + x].b;
+  data[width * y + x].a = pix.a * (1 - data[width * y + x].a / 255.0) + data[width * y + x].a;
+}
+
+void Image::MixTile (int x, int y, Image & tile) {
+  for (int i = 0; i < tileSize; i++) {
+    for (int j = 0; j < tileSize; j++) {
+      MixPixels(x + j, y + i, tile.GetPixel(j, tileSize - i - 1));
+    }
   }
+}
+
+void Image::Turn() {
+  Image tmp_img (width, height, 4);
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      tmp_img.PutPixel(x, y, GetPixel(y, x));
+    }
+  }
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      PutPixel(x, y, tmp_img.GetPixel(tmp_img.Width() - x - 1, y));
+    }
+  }
+}
 
 Image::~Image()
 {

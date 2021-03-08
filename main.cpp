@@ -4,11 +4,12 @@
 
 #define GLFW_DLL
 #include <GLFW/glfw3.h>
+#include <unistd.h>
 
 Image map;
 Point map_pos;
 Point starting_pos{.x = WINDOW_WIDTH / 2, .y = WINDOW_HEIGHT / 2};
-bool reach_exit = false;
+int level_num = 0;
 
 struct InputState
 {
@@ -122,12 +123,19 @@ Image * ReadMap (std::string fileName) {
   int width = 0, height = 1;
   Image floor (FLOOR_PATH);
   Image walls (WALLS_PATH);
-  Image exit (EXIT_PATH);
+  Image hidden_trap (HIDDEN_TRAP_PATH);
+  std::string path;
+  if (level_num < LEVEL_COUNT - 1) {
+    path = NEXT_LEVEL_PATH;
+  } else {
+    path = EXIT_PATH;
+  }
+  Image exit (path);
   Point cur_pos{0, tileSize};
   file.open(fileName);
   if (!file.is_open()) {
     std::cout << "ERROR\n";
-    //error
+    return NULL;
   }
   std::string buf;
   while(getline(file, buf)) {
@@ -143,47 +151,36 @@ Image * ReadMap (std::string fileName) {
   file.open(fileName);
   if (!file.is_open()) {
     std::cout << "ERROR\n";
-    //error
+    return NULL;
   }
-  //file.seekg(0, file.beg);
   std::cout << (int)file.tellg() << "\n";
-  //file >> sym;
   std::cout << file.eof() << "\n";
   while (file.get(sym)) {
-    //std::cout << "4";
-    //sym = 0;
-    //file >> sym;
-    std::cout << sym << "|";
+    std::cout << sym;
     switch (sym) {
       case ' ':
         // do nothing
         break;
       case '#':
-        //std::cout << "1";
         img->PutTile(cur_pos.x, cur_pos.y, walls, WALL);
         break;
       case '.':
-        //std::cout << "2\n";
         img->PutTile(cur_pos.x, cur_pos.y, floor, FLOOR);
         break;
       case '@':
         map_pos.x = starting_pos.x - cur_pos.x;
         map_pos.y = starting_pos.y - cur_pos.y;
-        //std::cout << map_pos.x << " | " << map_pos.y << "\n";
         img->PutTile(cur_pos.x, cur_pos.y, floor, FLOOR);
         break;
       case 'x':
         img->PutTile(cur_pos.x, cur_pos.y, floor, EXIT);
-        for (int y = 0; y < tileSize; y++) {
-          for (int x = 0; x < tileSize; x++) {
-            img->MixPixels(cur_pos.x + x, cur_pos.y + y, exit.GetPixel(x, tileSize - y - 1));
-          }
-        }
+        img->MixTile(cur_pos.x, cur_pos.y, exit);
         break;
-      case '\n':
+      case 'T':
+        img->PutTile(cur_pos.x, cur_pos.y, floor, TRAP);
+        img->MixTile(cur_pos.x, cur_pos.y, hidden_trap);
         break;
       default:
-        //std::cout << "3";
         break;
     }
     if (sym != '\n') {
@@ -230,71 +227,149 @@ int main(int argc, char** argv)
 	while (gl_error != GL_NO_ERROR)
 		gl_error = glGetError();
 
-	Player player{starting_pos};
-  Image player_tile (PLAYER_PATH);
-  player.SetTile(player_tile);
-
-	map = *ReadMap("./resources/map.txt");
-  std::cout << map.Height() / tileSize << "\n";
-
 	Image screenBuffer(WINDOW_WIDTH, WINDOW_HEIGHT, 4);
 
   glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);  GL_CHECK_ERRORS;
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f); GL_CHECK_ERRORS;
-  std::cout << "kok\n";
-
-  Image exit_msg (EXIT_MSG_PATH);
-  Point start {.x = (screenBuffer.Width() - exit_msg.Width()) / 2,
-               .y = (screenBuffer.Height() - exit_msg.Height()) / 2};
-  std::cout << start.x << " | " << start.y << "\n";
 
   //game loop
-	while (!glfwWindowShouldClose(window))
-	{
-		GLfloat currentFrame = glfwGetTime();
-		deltaTime = currentFrame - lastFrame;
-		lastFrame = currentFrame;
-    glfwPollEvents();
-    
-    if (!reach_exit) {
-      screenBuffer.Clean();
-      processPlayerMovement(player);
+  while ((!glfwWindowShouldClose(window)) && (level_num < LEVEL_COUNT)) {
+    Player player{starting_pos};
+    Image player_tile (PLAYER_PATH);
+    player.SetTile(player_tile);
 
-      for (int y = 0; (y < map.Height()) && (y + map_pos.y < screenBuffer.Height()); y++) {
-        if (y + map_pos.y < 0) {
-          continue;
-        }
-        for (int x = 0; (x < map.Width()) && (x + map_pos.x < screenBuffer.Width()); x++) {
-          //std::cout << y << " ";
-          if (x + map_pos.x < 0) {
-            continue;
-          }
-          screenBuffer.PutPixel(x + map_pos.x, y + map_pos.y, map.GetPixel(x, y));
-        }
-        //std::cout << y << "\n";
-      }
-
-      player.Draw(screenBuffer);
+    if (level_num == LEVEL_COUNT - 1) {
+      map = *ReadMap(MAP1_PATH);
     } else {
-      std::cout << "here";
-      for (int y = 0; (y < exit_msg.Height()) && (y + start.y < screenBuffer.Height()); y++) {
-        if (y + start.y < 0) {
-          continue;
-        }
-        for (int x = 0; (x < exit_msg.Width()) && (x + start.x < screenBuffer.Width()); x++) {
-          if (x + start.x < 0) {
-            continue;
-          }
-          screenBuffer.MixPixels(x + start.x, y + start.y, exit_msg.GetPixel(x, y));
-        }
-      }
+      map = *ReadMap(MAP2_PATH);
     }
 
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); GL_CHECK_ERRORS;
-    glDrawPixels (WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, screenBuffer.Data()); GL_CHECK_ERRORS;
+    Image exit_msg (EXIT_MSG_PATH);
+    Image failure_msg (FAILURE_MSG_PATH);
+    Image restart_msg (RESTART_MSG_PATH);
 
-		glfwSwapBuffers(window);
-	}
+    Point failure_msg_start {.x = (screenBuffer.Width() - exit_msg.Width()) / 2,
+                             .y = (screenBuffer.Height() - exit_msg.Height()) / 2};
+    Point restart_msg_start {.x = (screenBuffer.Width() - restart_msg.Width()) / 2,
+                             .y = failure_msg_start.y - restart_msg.Height()};
+    bool first_time = true;
+
+    while (!glfwWindowShouldClose(window)) {
+      GLfloat currentFrame = glfwGetTime();
+      deltaTime = currentFrame - lastFrame;
+      lastFrame = currentFrame;
+      glfwPollEvents();
+      
+      if (player.State() == OK) {
+        screenBuffer.Clean();
+        processPlayerMovement(player);
+
+        int x_start = 0;
+        int y_start = 0;
+        if (map_pos.x < 0) {
+          x_start = -map_pos.x;
+        }
+        if (map_pos.y < 0) {
+          y_start = -map_pos.y;
+        }
+        for (int y = y_start; (y < map.Height()) && (y + map_pos.y < screenBuffer.Height()); y++) {
+          // if (y + map_pos.y < 0) {
+          //   continue;
+          // }
+          for (int x = x_start; (x < map.Width()) && (x + map_pos.x < screenBuffer.Width()); x++) {
+            // if (x + map_pos.x < 0) {
+            //   continue;
+            // }
+            screenBuffer.PutPixel(x + map_pos.x, y + map_pos.y, map.GetPixel(x, y));
+          }
+        }
+
+        if (player.State() == DIED) {
+          player_tile.Turn();
+          player.SetTile(player_tile);
+        }
+
+        player.Draw(screenBuffer);
+      } else if (player.State() == WIN) {
+        if (level_num < LEVEL_COUNT - 1) {
+          bool is_black = true;
+          for (int y = 0; y < WINDOW_HEIGHT; y++) {
+            for (int x = 0; x < WINDOW_WIDTH; x++) {
+              screenBuffer.MixPixels(x, y, backgroundColor);
+              Pixel pix = screenBuffer.GetPixel(x, y);
+              if ((pix.g != 0) || (pix.b != 0) || (pix.r != 0)) {
+                is_black = false;
+              }
+            }
+          }
+          if (is_black) {
+            break;
+          }
+        } else {
+          if (first_time) {
+            for (int y = 0; (y < exit_msg.Height()) && (y + failure_msg_start.y < screenBuffer.Height()); y++) {
+              if (y + failure_msg_start.y < 0) {
+                continue;
+              }
+              for (int x = 0; (x < exit_msg.Width()) && (x + failure_msg_start.x < screenBuffer.Width()); x++) {
+                if (x + failure_msg_start.x < 0) {
+                  continue;
+                }
+                screenBuffer.MixPixels(x + failure_msg_start.x, y + failure_msg_start.y,
+                                       exit_msg.GetPixel(x, exit_msg.Height() - y - 1));
+              }
+            }
+            first_time = false;
+          }
+        }
+      } else /*player.State() == DIED*/ {
+        if (first_time) {
+          Image trap (TRAP_PATH);
+          Point pos {.x = ((player.Coords().x + tileSize / 2 - map_pos.x) / tileSize) * tileSize + map_pos.x,
+                     .y = ((player.Coords().y + tileSize / 2 - map_pos.y) / tileSize) * tileSize + map_pos.y};
+          screenBuffer.MixTile(pos.x, pos.y, trap);
+          // player_tile.Turn();
+          // player.SetTile(player_tile);
+          player.Draw(screenBuffer);
+          for (int y = 0; (y < failure_msg.Height()) && (y + failure_msg_start.y < screenBuffer.Height()); y++) {
+            if (y + failure_msg_start.y < 0) {
+              continue;
+            }
+            for (int x = 0; (x < failure_msg.Width()) && (x + failure_msg_start.x < screenBuffer.Width()); x++) {
+              if (x + failure_msg_start.x < 0) {
+                continue;
+              }
+              screenBuffer.MixPixels(x + failure_msg_start.x, y + failure_msg_start.y,
+                                     failure_msg.GetPixel(x, failure_msg.Height() - y - 1));
+            }
+          }
+          for (int y = 0; (y < restart_msg.Height()) && (y + restart_msg_start.y < screenBuffer.Height()); y++) {
+            if (y + restart_msg_start.y < 0) {
+              continue;
+            }
+            for (int x = 0; (x < restart_msg.Width()) && (x + restart_msg_start.x < screenBuffer.Width()); x++) {
+              if (x + restart_msg_start.x < 0) {
+                continue;
+              }
+              screenBuffer.MixPixels(x + restart_msg_start.x, y + restart_msg_start.y,
+                                     restart_msg.GetPixel(x, restart_msg.Height() - y - 1));
+            }
+          }
+          first_time = false;
+        }
+        if (Input.keys[GLFW_KEY_R]) {
+          level_num = -1;
+          break;
+        }
+      }
+
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); GL_CHECK_ERRORS;
+      glDrawPixels (WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, screenBuffer.Data()); GL_CHECK_ERRORS;
+
+      glfwSwapBuffers(window);
+    }
+    level_num++;
+  }
 
 	glfwTerminate();
 	return 0;

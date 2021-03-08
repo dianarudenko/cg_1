@@ -19,76 +19,88 @@ void Player::ProcessInput(MovementDir dir)
       for (int i = 0; i < move_dist; i++) {
         if (map.GetTileType(coords.x - map_pos.x + tileSize / 2,
             coords.y - map_pos.y + tileSize / 2) == EXIT) {
-          reach_exit = true;
+          state = WIN;
+          break;
+        }
+        if (map.GetTileType(coords.x - map_pos.x + tileSize / 2,
+            coords.y - map_pos.y + tileSize / 2) == TRAP) {
+          state = DIED;
           break;
         }
         if (map.GetTileType(coords.x - map_pos.x, coords.y - map_pos.y + tileSize) == WALL) break;
         if (map.GetTileType(coords.x - map_pos.x + tileSize - 1, coords.y - map_pos.y + tileSize) == WALL) break;
         if (WINDOW_HEIGHT - coords.y < DELTA) {
-          //if (map.GetTileType(coords.x - map_pos.x, y - map_pos.y + 1) != WALL)
             map_pos.y--;
         } else {
           coords.y++;
         }
       }
-      //coords.y = y;
       break;
     case MovementDir::DOWN:
       old_coords.y = coords.y;
       for (int i = 0; i < move_dist; i++) {
         if (map.GetTileType(coords.x - map_pos.x + tileSize / 2,
             coords.y - map_pos.y + tileSize / 2) == EXIT) {
-          reach_exit = true;
+          state = WIN;
+          break;
+        }
+        if (map.GetTileType(coords.x - map_pos.x + tileSize / 2,
+            coords.y - map_pos.y + tileSize / 2) == TRAP) {
+          state = DIED;
           break;
         }
         if (map.GetTileType(coords.x - map_pos.x, coords.y - map_pos.y - 1) == WALL) break;
         if (map.GetTileType(coords.x - map_pos.x + tileSize - 1, coords.y - map_pos.y - 1) == WALL) break;
         if (coords.y < DELTA) {
-          //if (map.GetTileType(coords.x - map_pos.x, y - map_pos.y - 1) != WALL)
             map_pos.y++;
         } else {
           coords.y--;
         }
       }
-      //coords.y = y;
       break;
     case MovementDir::LEFT:
       old_coords.x = coords.x;
       for (int i = 0; i < move_dist; i++) {
         if (map.GetTileType(coords.x - map_pos.x + tileSize / 2,
             coords.y - map_pos.y + tileSize / 2) == EXIT) {
-          reach_exit = true;
+          state = WIN;
+          break;
+        }
+        if (map.GetTileType(coords.x - map_pos.x + tileSize / 2,
+            coords.y - map_pos.y + tileSize / 2) == TRAP) {
+          state = DIED;
           break;
         }
         if (map.GetTileType(coords.x - map_pos.x - 1, coords.y - map_pos.y) == WALL) break;
         if (map.GetTileType(coords.x - map_pos.x - 1, coords.y - map_pos.y + tileSize - 1) == WALL) break;
         if (coords.x < DELTA) {
-          //if (map.GetTileType(x - map_pos.x - 1, coords.y - map_pos.y) != WALL)
             map_pos.x++;
         } else {
           coords.x--;
         }
       }
-      //coords.x = x;
       break;
     case MovementDir::RIGHT:
       old_coords.x = coords.x;
       for (int i = 0; i < move_dist; i++) {
         if (map.GetTileType(coords.x - map_pos.x + tileSize / 2,
             coords.y - map_pos.y + tileSize / 2) == EXIT) {
-          reach_exit = true;
+          state = WIN;
+          break;
+        }
+        if (map.GetTileType(coords.x - map_pos.x + tileSize / 2,
+            coords.y - map_pos.y + tileSize / 2) == TRAP) {
+          state = DIED;
           break;
         }
         if (map.GetTileType(coords.x - map_pos.x + tileSize, coords.y - map_pos.y) == WALL) break;
         if (map.GetTileType(coords.x - map_pos.x + tileSize, coords.y - map_pos.y + tileSize - 1) == WALL) break;
         if (WINDOW_WIDTH - coords.x < DELTA) {
-          //if (map.GetTileType(x - map_pos.x + tileSize + 1, coords.y - map_pos.y) != WALL)
             map_pos.x--;
         } else {
           coords.x++;
         }
       }
-      //coords.x = x;
       break;
     default:
       break;
@@ -124,11 +136,6 @@ void Player::Draw(Image &screen)
     for(int x = coords.x; x < coords.x + tileSize; ++x)
     {
       screen.MixPixels(x, y, tile->GetPixel(x - coords.x, tileSize - y + coords.y - 1));
-      // std::cout << x - coords.x << "," << y - coords.y << ": " <<
-      //              (int)this->tile->GetPixel(x, y).a << " | " <<
-      //              (int)this->tile->GetPixel(x, y).b << " | " <<
-      //              (int)this->tile->GetPixel(x, y).g << " | " <<
-      //              (int)this->tile->GetPixel(x, y).r << "\n";
     }
   }
 }

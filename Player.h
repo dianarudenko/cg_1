@@ -21,7 +21,9 @@ struct Player
   void ProcessInput(MovementDir dir);
   void Draw(Image &screen);
   Point Coords() {return coords; }
+  void SetCoords(int x, int y) {coords.x = x; coords.y = y; }
   void SetTile (Image & tile) {this->tile = &tile; }
+  state_t State() {return state; }
 
 private:
   Point coords {.x = 10, .y = 10};
@@ -29,6 +31,7 @@ private:
   Pixel color {.r = 255, .g = 0, .b = 0, .a = 255};
   Image *tile = nullptr;
   int move_speed = 4;
+  state_t state = OK;
 
 };
 

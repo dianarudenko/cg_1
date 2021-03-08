@@ -5,13 +5,21 @@
 
 constexpr int WINDOW_WIDTH = 1024, WINDOW_HEIGHT = 1024;
 
+#define MAP1_PATH "./resources/map1.txt"
+#define MAP2_PATH "./resources/map2.txt"
 #define FLOOR_PATH "./resources/floor.png"
 #define WALLS_PATH "./resources/wall.png"
-#define PLAYER_PATH "./resources/player1.png"
+#define PLAYER_PATH "./resources/player4.png"
 #define EXIT_PATH "./resources/exit.png"
+#define NEXT_LEVEL_PATH "./resources/next_level.png"
 #define EXIT_MSG_PATH "./resources/exit_msg.png"
+#define FAILURE_MSG_PATH "./resources/failure_msg.png"
+#define TRAP_PATH "./resources/trap.png"
+#define HIDDEN_TRAP_PATH "./resources/hidden_trap.png"
+#define RESTART_MSG_PATH "./resources/restart_msg.png"
 
 #define DELTA 160 // 5 * 32
+#define LEVEL_COUNT 2 
 
 constexpr int tileSize = 32;
 
@@ -29,9 +37,9 @@ struct Point
   int y;
 };
 
-enum tileType {UNKNOWN, FLOOR, WALL, EXIT};
+enum tileType {UNKNOWN, FLOOR, WALL, EXIT, TRAP};
 
-constexpr Pixel backgroundColor{0, 0, 0, 0};
+constexpr Pixel backgroundColor{0, 0, 0, 20};
 
 struct Image
 {
@@ -53,6 +61,8 @@ struct Image
   tileType GetTileType(int x, int y) { return tileMap[width * y + x]; }
   void Clean();
   void MixPixels (int x, int y, const Pixel &pix);
+  void MixTile (int x, int y, Image & tile);
+  void Turn();
 
   ~Image();
 
@@ -68,6 +78,6 @@ private:
 
 extern Image map;
 extern Point map_pos;
-extern bool reach_exit;
+enum state_t {OK, NEXT_LEVEL, WIN, DIED};
 
 #endif //MAIN_IMAGE_H
