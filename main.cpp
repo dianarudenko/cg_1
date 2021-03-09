@@ -239,9 +239,9 @@ int main(int argc, char** argv)
     player.SetTile(player_tile);
 
     if (level_num == LEVEL_COUNT - 1) {
-      map = *ReadMap(MAP1_PATH);
-    } else {
       map = *ReadMap(MAP2_PATH);
+    } else {
+      map = *ReadMap(MAP1_PATH);
     }
 
     Image exit_msg (EXIT_MSG_PATH);

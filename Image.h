@@ -9,7 +9,7 @@ constexpr int WINDOW_WIDTH = 1024, WINDOW_HEIGHT = 1024;
 #define MAP2_PATH "./resources/map2.txt"
 #define FLOOR_PATH "./resources/floor.png"
 #define WALLS_PATH "./resources/wall.png"
-#define PLAYER_PATH "./resources/player4.png"
+#define PLAYER_PATH "./resources/player1.png"
 #define EXIT_PATH "./resources/exit.png"
 #define NEXT_LEVEL_PATH "./resources/next_level.png"
 #define EXIT_MSG_PATH "./resources/exit_msg.png"
